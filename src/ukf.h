@@ -1,7 +1,7 @@
 #ifndef UKF_H
 #define UKF_H
 
-#include "measurement_package.h"
+#include "TestDataFileHandler.hpp"
 #include "Eigen/Dense"
 #include <vector>
 #include <string>
@@ -108,6 +108,11 @@ public:
    * @param meas_package The measurement at k+1
    */
   void UpdateRadar(MeasurementPackage meas_package);
+
+  VectorXd GetX() const
+  {
+    return x_;
+  }
 };
 
 #endif /* UKF_H */
