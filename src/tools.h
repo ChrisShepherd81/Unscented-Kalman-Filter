@@ -18,7 +18,11 @@ public:
   /**
   * A helper method to calculate RMSE.
   */
-  Eigen::VectorXd CalculateRMSE(const std::vector<Eigen::VectorXd> &estimations, const std::vector<Eigen::VectorXd> &ground_truth);
+  Eigen::VectorXd CalculateRMSE(const std::vector<Eigen::VectorXd> &estimations,
+                                const std::vector<Eigen::VectorXd> &ground_truth,
+                                const size_t stateVectorLenght);
+
+  Eigen::VectorXd transformEstimationVector(const Eigen::VectorXd &est);
 
 };
 
