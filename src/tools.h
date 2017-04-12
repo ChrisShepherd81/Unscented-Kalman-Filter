@@ -1,6 +1,7 @@
 #ifndef TOOLS_H_
 #define TOOLS_H_
 #include <vector>
+#include <cmath>
 #include "Eigen/Dense"
 
 class Tools {
