@@ -34,9 +34,6 @@ public:
   ///* predicted sigma points matrix
   MatrixXd Xsig_pred_;
 
-  ///* time when the state is true, in us
-  long long time_us_;
-
   ///* Process noise standard deviation longitudinal acceleration in m/s^2
   double std_a_;
 
@@ -124,12 +121,17 @@ public:
 private:
   Tools tools_;
   long previous_timestamp_ = 0;
+  MatrixXd Zsig_;
+  MatrixXd S_;
+  VectorXd z_pred_;
   double getDeltaTime(long timestamp);
   void initalize(const MeasurementPackage &measurement);
   MatrixXd generateSigmaPoints();
   void predictSigmaPoints(MatrixXd &Xsig_aug, double dt);
   void predictMeanAndCovariance();
   VectorXd predictSigmaPointColumn(VectorXd& row, double dt);
+  VectorXd hFuncRadar(const VectorXd & x);
+  void predictRadarMeasurement(size_t n_z);
 };
 
 #endif /* UKF_H */
