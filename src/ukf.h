@@ -8,6 +8,8 @@
 #include <fstream>
 #include "tools.h"
 
+#define PRINT 1
+
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
@@ -88,7 +90,7 @@ public:
    * ProcessMeasurement
    * @param meas_package The latest measurement data of either radar or laser
    */
-  void ProcessMeasurement(MeasurementPackage meas_package);
+  void ProcessMeasurement(const MeasurementPackage &meas_package);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance
@@ -101,18 +103,32 @@ public:
    * Updates the state and the state covariance matrix using a laser measurement
    * @param meas_package The measurement at k+1
    */
-  void UpdateLidar(MeasurementPackage meas_package);
+  void UpdateLidar(const VectorXd &measurement);
 
   /**
    * Updates the state and the state covariance matrix using a radar measurement
    * @param meas_package The measurement at k+1
    */
-  void UpdateRadar(MeasurementPackage meas_package);
+  void UpdateRadar(const VectorXd &measurement);
 
-  VectorXd GetX() const
+  const VectorXd GetX() const
   {
     return x_;
   }
+
+  const MatrixXd GetP() const
+  {
+    return P_;
+  }
+
+private:
+  long previous_timestamp_ = 0;
+  double getDeltaTime(long timestamp);
+  void initalize(const MeasurementPackage &measurement);
+  MatrixXd generateSigmaPoints();
+  void predictSigmaPoints(MatrixXd &Xsig_aug, double dt);
+  void predictMeanAndCovariance();
+  VectorXd predictSigmaPointColumn(VectorXd& row, double dt);
 };
 
 #endif /* UKF_H */

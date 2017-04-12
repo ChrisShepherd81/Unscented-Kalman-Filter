@@ -8,65 +8,93 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using std::vector;
 
-/**
- * Initializes Unscented Kalman filter
- */
+///////////////////////////////////////////////////////////////////////////////////////
 UKF::UKF() {
-  // if this is false, laser measurements will be ignored (except during init)
   use_laser_ = true;
-
-  // if this is false, radar measurements will be ignored (except during init)
   use_radar_ = true;
-
-  // initial state vector
   x_ = VectorXd(5);
-
-  // initial covariance matrix
-  P_ = MatrixXd(5, 5);
-
-  // Process noise standard deviation longitudinal acceleration in m/s^2
+  P_ = MatrixXd::Identity(5, 5);
   std_a_ = 30;
-
-  // Process noise standard deviation yaw acceleration in rad/s^2
   std_yawdd_ = 30;
-
-  // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
-
-  // Laser measurement noise standard deviation position2 in m
   std_laspy_ = 0.15;
-
-  // Radar measurement noise standard deviation radius in m
   std_radr_ = 0.3;
-
-  // Radar measurement noise standard deviation angle in rad
   std_radphi_ = 0.03;
-
-  // Radar measurement noise standard deviation radius change in m/s
   std_radrd_ = 0.3;
+  n_x_ = 5;
+  n_aug_ = 7;
 
-  /**
-  TODO:
+  //define spreading parameter
+  lambda_ = 3 - n_aug_;
 
-  Complete the initialization. See ukf.h for other member properties.
+  Xsig_pred_ = MatrixXd::Zero(n_x_, 2 * n_aug_ + 1);
 
-  Hint: one or more values initialized above might be wildly off...
-  */
+  //set weights
+  weights_ = VectorXd(2*n_aug_ +1);
+  double w1 = lambda_/(lambda_+n_aug_);
+  double w2 = 1.0/(2*(lambda_+n_aug_));
+  weights_ += VectorXd::Constant(2*n_aug_+1, w2);
+  weights_(0) = w1;
+
+  double NIS_radar_;
+  double NIS_laser_;
+  is_initialized_ = false;
 }
-
+///////////////////////////////////////////////////////////////////////////////////////
 UKF::~UKF() {}
+///////////////////////////////////////////////////////////////////////////////////////
+void UKF::initalize(const MeasurementPackage &measurement)
+{
+  //Initialize time
+  this->previous_timestamp_ = measurement.timestamp_;
 
-/**
- * @param {MeasurementPackage} meas_package The latest measurement data of
- * either radar or laser.
- */
-void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
-  /**
-  TODO:
+  is_initialized_ = true;
+}
+///////////////////////////////////////////////////////////////////////////////////////
+void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
+{
+  /*****************************************************************************
+  *  Initialization
+  ****************************************************************************/
+  if (!is_initialized_)
+  {
+    this->initalize(measurement);
+    return;
+  }
 
-  Complete this function! Make sure you switch between lidar and radar
-  measurements.
-  */
+  /*****************************************************************************
+   *  Prediction
+   ****************************************************************************/
+  double dt = this->getDeltaTime(measurement.timestamp_);
+  //ekf.Q = tools.CalculateProcessCovarianceMatrix(dt);
+  this->Prediction(dt);
+
+  /*****************************************************************************
+   *  Update
+   ****************************************************************************/
+  //Use the sensor type to perform the update step
+  if (measurement.sensor_type == MeasurementPackage::RADAR && use_radar_)
+  {
+    // Radar updates
+  //      ekf.R = this->R_radar_;
+  //      ekf.H = tools.CalculateJacobian(ekf.GetX());
+    this->UpdateLidar(measurement.values);
+  }
+  else if(use_laser_)
+  {
+    // Laser updates
+  //      ekf.R = this->R_laser_;
+  //      ekf.H = this->H_laser_;
+    this->UpdateRadar(measurement.values);
+  }
+  else
+    return;
+
+#if PRINT
+  // print the output
+  cout << "x_ = \n" << GetX() << endl;
+  cout << "P_ = \n" << GetP() << endl;
+#endif
 }
 
 /**
@@ -74,7 +102,12 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  * @param {double} delta_t the change in time (in seconds) between the last
  * measurement and this one.
  */
-void UKF::Prediction(double delta_t) {
+void UKF::Prediction(double delta_t)
+{
+
+  MatrixXd sigmaPoints = generateSigmaPoints();
+  this->predictSigmaPoints(sigmaPoints, delta_t);
+  this->predictMeanAndCovariance();
   /**
   TODO:
 
@@ -87,7 +120,7 @@ void UKF::Prediction(double delta_t) {
  * Updates the state and the state covariance matrix using a laser measurement.
  * @param {MeasurementPackage} meas_package
  */
-void UKF::UpdateLidar(MeasurementPackage meas_package) {
+void UKF::UpdateLidar(const VectorXd &measurement) {
   /**
   TODO:
 
@@ -102,7 +135,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  * Updates the state and the state covariance matrix using a radar measurement.
  * @param {MeasurementPackage} meas_package
  */
-void UKF::UpdateRadar(MeasurementPackage meas_package) {
+void UKF::UpdateRadar(const VectorXd &measurement) {
   /**
   TODO:
 
@@ -112,3 +145,108 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   You'll also need to calculate the radar NIS.
   */
 }
+///////////////////////////////////////////////////////////////////////////////////////
+MatrixXd UKF::generateSigmaPoints()
+{
+  //create augmented mean vector
+  VectorXd x_aug = VectorXd::Zero(n_aug_);
+  x_aug.head(x_.size()) = x_;
+
+  //create augmented covariance matrix
+  MatrixXd Q(2,2);
+  Q << std_a_*std_a_, 0,
+       0, std_yawdd_*std_yawdd_;
+  //create augmented state covariance
+  MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
+  P_aug.topLeftCorner(P_.rows(), P_.cols()) = P_;
+  P_aug.bottomRightCorner(Q.rows(), Q.cols()) = Q;
+
+  //create square root matrix
+  MatrixXd A = P_aug.llt().matrixL();
+
+  MatrixXd B = (A *std::sqrt(lambda_ + n_aug_));
+  //create sigma point matrix
+  MatrixXd Xsig_aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
+  Xsig_aug.block(0,1,B.rows(),B.cols()) = B;
+  Xsig_aug.block(0,1+B.cols(),B.rows(),B.cols()) = -B;
+  Xsig_aug = Xsig_aug.colwise() + x_aug;
+
+#if PRINT
+  cout << "Xsig_aug = \n" << Xsig_aug << endl;
+#endif
+
+  return Xsig_aug;
+}
+///////////////////////////////////////////////////////////////////////////////////////
+void UKF::predictSigmaPoints(MatrixXd &Xsig_aug, double dt)
+{
+  //predict sigma points
+  for(size_t i=0; i < Xsig_aug.cols(); ++i)
+  {
+    VectorXd col = Xsig_aug.col(i);
+    Xsig_pred_.col(i) += predictSigmaPointColumn(col, dt);
+  }
+#if PRINT
+  cout << "Xsig_pred_ = \n" << Xsig_pred_ << endl;
+#endif
+}
+///////////////////////////////////////////////////////////////////////////////////////
+void UKF::predictMeanAndCovariance()
+{
+  //predict state mean
+  for(size_t  i=0; i < Xsig_pred_.rows(); ++i)
+    x_(i) = Xsig_pred_.row(i)*weights_;
+
+  //predict state covariance matrix
+  for(size_t j=0; j < Xsig_pred_.cols(); ++j)
+  {
+    P_ += weights_(j)*(Xsig_pred_.col(j)-x_)*(Xsig_pred_.col(j)-x_).transpose();
+  }
+}
+///////////////////////////////////////////////////////////////////////////////////////
+double UKF::getDeltaTime(long timestamp)
+{
+  //calculate time delta and convert from mu secs to secs.
+  double dt = (timestamp - this->previous_timestamp_)/1.0e6;
+  this->previous_timestamp_ = timestamp;
+  return dt;
+}
+///////////////////////////////////////////////////////////////////////////////////////
+VectorXd UKF::predictSigmaPointColumn(VectorXd& col, double dt)
+{
+  double v      = col(2);
+  double psi    = col(3);
+  double psid   = col(4);
+  double va     = col(5);
+  double vpsidd = col(6);
+  double dt2    = dt*dt;
+  double sinPsi = std::sin(psi);
+  double cosPsi = std::cos(psi);
+
+  VectorXd vk = VectorXd::Zero(n_x_);
+
+  vk << 0.5*dt2*cosPsi*va,
+        0.5*dt2*sinPsi*va,
+        dt*va,
+        0.5*dt2*vpsidd,
+        dt*vpsidd;
+
+  VectorXd xTemp = VectorXd::Zero(n_x_);
+
+  if(psid != 0)
+  {
+    xTemp(0) = (v/psid)*(std::sin(psi+(psid*dt))-sinPsi);
+    xTemp(1) = (v/psid)*(-std::cos(psi+(psid*dt))+cosPsi);
+    xTemp(3) = psid*dt;
+  }
+  else
+  {
+    xTemp(0) = v*cosPsi*dt;
+    xTemp(1) = v*sinPsi*dt;
+  }
+
+  VectorXd result = VectorXd::Zero(5);
+  result = col.head(5) + vk + xTemp;
+  return result;
+}
+///////////////////////////////////////////////////////////////////////////////////////
