@@ -17,6 +17,9 @@ using std::string;
 using std::cout;
 using std::endl;
 
+const size_t StateVectorLength = 5;
+const size_t GroundTruthVectorLength = 4;
+
 void check_arguments(int argc, char* argv[]);
 
 int main(int argc, char* argv[])
@@ -49,6 +52,7 @@ int main(int argc, char* argv[])
   PlotData plot_ground("Ground truth");
 #endif
 
+  fileHandler.writeFileHeader();
   //Call the EKF-based fusion
   size_t N = measurement_pack_list.size();
   for (size_t k = 0; k < N; ++k) {
@@ -103,7 +107,7 @@ int main(int argc, char* argv[])
 
   // compute the accuracy (RMSE)
   Tools tools;
-  cout << "Accuracy - RMSE:" << endl << tools.CalculateRMSE(estimations, ground_truth) << endl;
+  cout << "Accuracy - RMSE:" << endl << tools.CalculateRMSE(estimations, ground_truth, GroundTruthVectorLength) << endl;
 
 #if GNU_PLOT
   Gnuplot gp;
