@@ -45,6 +45,7 @@ class TestDataFileHandler
   void write_to_file(const VectorXd& v, size_t valsToWrite=0);
   void write_to_file(double val);
   void write_to_file(string val);
+  void writeFileHeader();
 };
 
 #endif /* SRC_TESTDATAFILEREADER_HPP_ */

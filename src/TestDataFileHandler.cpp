@@ -106,6 +106,23 @@ void TestDataFileHandler::read_file(vector<MeasurementPackage> &measurement_pack
   }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void TestDataFileHandler::writeFileHeader()
+{
+  // column names for output file
+  out_file << "px" << "\t";
+  out_file << "py" << "\t";
+  out_file << "v" << "\t";
+  out_file << "yaw_angle" << "\t";
+  out_file << "yaw_rate" << "\t";
+  out_file << "px_measured" << "\t";
+  out_file << "py_measured" << "\t";
+  out_file << "px_true" << "\t";
+  out_file << "py_true" << "\t";
+  out_file << "vx_true" << "\t";
+  out_file << "vy_true" << "\t";
+  out_file << "NIS" << "\n";
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void TestDataFileHandler::write_to_file(const VectorXd& v, size_t valToWrite)
 {
   size_t vals = valToWrite == 0 ? v.size() : valToWrite;
