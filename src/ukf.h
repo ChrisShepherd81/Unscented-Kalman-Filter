@@ -122,6 +122,7 @@ public:
   }
 
 private:
+  Tools tools_;
   long previous_timestamp_ = 0;
   double getDeltaTime(long timestamp);
   void initalize(const MeasurementPackage &measurement);

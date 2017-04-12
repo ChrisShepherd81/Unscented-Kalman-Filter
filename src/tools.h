@@ -4,6 +4,8 @@
 #include <cmath>
 #include "Eigen/Dense"
 
+using Eigen::VectorXd;
+
 class Tools {
 public:
   /**
@@ -19,11 +21,13 @@ public:
   /**
   * A helper method to calculate RMSE.
   */
-  Eigen::VectorXd CalculateRMSE(const std::vector<Eigen::VectorXd> &estimations,
-                                const std::vector<Eigen::VectorXd> &ground_truth,
+  VectorXd CalculateRMSE(const std::vector<VectorXd> &estimations,
+                                const std::vector<VectorXd> &ground_truth,
                                 const size_t stateVectorLenght);
 
-  Eigen::VectorXd transformEstimationVector(const Eigen::VectorXd &est);
+  VectorXd transformEstimationVector(const Eigen::VectorXd &est);
+
+  VectorXd MapRadarPolarToCartesianPosition(const VectorXd& x_radar);
 
 };
 

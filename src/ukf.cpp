@@ -12,7 +12,7 @@ using std::vector;
 UKF::UKF() {
   use_laser_ = true;
   use_radar_ = true;
-  x_ = VectorXd(5);
+  x_ = VectorXd::Zero(5);
   P_ = MatrixXd::Identity(5, 5);
   std_a_ = 30;
   std_yawdd_ = 30;
@@ -47,6 +47,20 @@ void UKF::initalize(const MeasurementPackage &measurement)
 {
   //Initialize time
   this->previous_timestamp_ = measurement.timestamp_;
+
+  //Initalize state vector
+  if (measurement.sensor_type == MeasurementPackage::RADAR)
+  {
+    //Convert radar from polar to cartesian coordinates and initialize state.
+    VectorXd x = tools_.MapRadarPolarToCartesianPosition(measurement.values);
+    x_(0) = x(0);
+    x_(1) = x(1);
+    //TODO: estimate yaw and velocity
+  }
+  else if (measurement.sensor_type == MeasurementPackage::LASER)
+  {
+    x_ << measurement.values(0), measurement.values(1), 0, 0, 0;
+  }
 
   is_initialized_ = true;
 }
@@ -166,7 +180,7 @@ MatrixXd UKF::generateSigmaPoints()
 
   MatrixXd B = (A *std::sqrt(lambda_ + n_aug_));
   //create sigma point matrix
-  MatrixXd Xsig_aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
+  MatrixXd Xsig_aug = MatrixXd::Zero(n_aug_, 2 * n_aug_ + 1);
   Xsig_aug.block(0,1,B.rows(),B.cols()) = B;
   Xsig_aug.block(0,1+B.cols(),B.rows(),B.cols()) = -B;
   Xsig_aug = Xsig_aug.colwise() + x_aug;
