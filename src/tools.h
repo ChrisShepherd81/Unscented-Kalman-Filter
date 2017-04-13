@@ -29,6 +29,8 @@ public:
 
   VectorXd MapRadarPolarToCartesianPosition(const VectorXd& x_radar);
 
+  double NormalizeAngle(double angle);
+
 };
 
 #endif /* TOOLS_H_ */

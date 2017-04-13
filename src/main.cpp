@@ -17,7 +17,6 @@ using std::string;
 using std::cout;
 using std::endl;
 
-const size_t StateVectorLength = 5;
 const size_t GroundTruthVectorLength = 4;
 
 void check_arguments(int argc, char* argv[]);
@@ -56,8 +55,7 @@ int main(int argc, char* argv[])
   //Call the EKF-based fusion
   size_t N = measurement_pack_list.size();
   for (size_t k = 0; k < N; ++k) {
-    // start filtering from the second frame (the speed is unknown in the first
-    // frame)
+    // start filtering from the second frame (the speed is unknown in the first frame)
     ukf.ProcessMeasurement(measurement_pack_list[k]);
 
     // output the estimation

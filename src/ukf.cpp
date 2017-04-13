@@ -1,44 +1,12 @@
 #include "ukf.h"
 ///////////////////////////////////////////////////////////////////////////////////////
 //size_t n_aug, size_t n_x, double std_a, double std_yawdd, double lambda
-UKF::UKF() : n_x_(5), n_aug_(7), Xsig_pred_(n_aug_, n_x_, 0.7, 0.5)
+UKF::UKF() : Xsig_pred_(n_aug_, n_x_, 0.7, 0.5)
 {
   use_laser_ = false;
   use_radar_ = true;
-  //n_x_ = 5;
-  x_ = VectorXd::Zero(n_x_);
-  P_ = MatrixXd::Identity(n_x_, n_x_);
-  std_laspx_ = 0.15;
-  std_laspy_ = 0.15;
-  std_radr_ = 0.3;
-  std_radphi_ = 0.03;
-  std_radrd_ = 0.3;
-  //n_aug_ = 7;
 
-  //define spreading parameter
-  lambda_ = 3 - n_aug_;
-
-  //set weights
-  weights_ = VectorXd::Zero(2*n_aug_ +1);
-  double w1 = lambda_/(lambda_+n_aug_);
-  double w2 = 1.0/(2*(lambda_+n_aug_));
-  weights_ += VectorXd::Constant(2*n_aug_+1, w2);
-  weights_(0) = w1;
-
-  //observation model mapping matrix lidar
-  H_lidar_ = MatrixXd::Zero(2, n_x_);
-  H_lidar_ << 1, 0, 0, 0, 0,
-              0, 1, 0, 0, 0;
-
-  //measurement noise matrix - lidar
-  R_lidar_ = MatrixXd::Zero(2, 2);
-  R_lidar_ << std_laspx_*std_laspx_, 0,
-              0, std_laspy_*std_laspy_;
-
-  I_ = MatrixXd::Identity(n_x_, n_x_);
-
-  NIS_radar_ = 0;
-  NIS_laser_ = 0;
+  NIS_ = 0;
   is_initialized_ = false;
 }
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -48,6 +16,12 @@ void UKF::initalize(const MeasurementPackage &measurement)
 {
   //Initialize time
   this->previous_timestamp_ = measurement.timestamp_;
+
+  //InitInitialize weights
+  this->initalizeWeights();
+
+  //Initialize matrices and state vector
+  this->initalizeMatrices();
 
   //Initalize state vector
   if (measurement.sensor_type == MeasurementPackage::RADAR)
@@ -64,6 +38,34 @@ void UKF::initalize(const MeasurementPackage &measurement)
   }
 
   is_initialized_ = true;
+}
+///////////////////////////////////////////////////////////////////////////////////////
+void UKF::initalizeWeights()
+{
+  //set weights
+  weights_ = VectorXd::Zero(2*n_aug_ +1);
+  double w1 = lambda_/(lambda_+n_aug_);
+  double w2 = 1.0/(2*(lambda_+n_aug_));
+  weights_ += VectorXd::Constant(2*n_aug_+1, w2);
+  weights_(0) = w1;
+}
+///////////////////////////////////////////////////////////////////////////////////////
+void UKF::initalizeMatrices()
+{
+  x_ = VectorXd::Zero(n_x_);
+  P_ = MatrixXd::Identity(n_x_, n_x_);
+
+  //observation model mapping matrix lidar
+  H_lidar_ = MatrixXd::Zero(2, n_x_);
+  H_lidar_ << 1, 0, 0, 0, 0,
+             0, 1, 0, 0, 0;
+
+  //measurement noise matrix - lidar
+  R_lidar_ = MatrixXd::Zero(2, 2);
+  R_lidar_ << std_laspx_*std_laspx_, 0,
+             0, std_laspy_*std_laspy_;
+
+  I_ = MatrixXd::Identity(n_x_, n_x_);
 }
 ///////////////////////////////////////////////////////////////////////////////////////
 void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
@@ -86,7 +88,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
    *  Prediction
    ****************************************************************************/
   double dt = this->getDeltaTime(measurement.timestamp_);
-  this->Prediction(dt);
+  this->prediction(dt);
 
   /*****************************************************************************
    *  Update
@@ -95,47 +97,29 @@ void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
   if ((measurement.sensor_type == MeasurementPackage::RADAR) && use_radar_)
   {
     // Radar updates
-    std::cout << "Upadte with radar data\n";
-    this->UpdateRadar(measurement.values);
+    this->updateRadar(measurement.values);
   }
   else if((measurement.sensor_type == MeasurementPackage::LASER) && use_laser_)
   {
     // Laser updates
-    std::cout << "Upadte with lidar data\n";
-    this->UpdateLidar(measurement.values);
+    this->updateLidar(measurement.values);
   }
   else
     return;
 
 #if PRINT
-  // print the output
   cout << "x_ = \n" << GetX() << endl;
   cout << "P_ = \n" << GetP() << endl;
 #endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////
-void UKF::Prediction(double delta_t)
+void UKF::prediction(double delta_t)
 {
-  //MatrixXd sigmaPoints = generateSigmaPoints();
   this->Xsig_pred_.predictSigmaPoints(x_, P_, delta_t);
   this->predictMeanAndCovariance();
 }
 ///////////////////////////////////////////////////////////////////////////////////////
-void UKF::UpdateLidar(const VectorXd &measurement) {
-
-  VectorXd z_pred = H_lidar_ * x_;
-  VectorXd y = measurement - z_pred;
-  MatrixXd Ht = H_lidar_.transpose();
-  MatrixXd S = H_lidar_ * P_ * Ht + R_lidar_;
-  MatrixXd PHt = P_ * Ht;
-  MatrixXd K = PHt * S.inverse();
-
-  //new estimate
-  x_ = x_ + (K * y);
-  P_ = (I_ - K * H_lidar_) * P_;
-}
-///////////////////////////////////////////////////////////////////////////////////////
-void UKF::UpdateRadar(const VectorXd &z)
+void UKF::updateRadar(const VectorXd &z)
 {
   size_t n_z = z.size();
 
@@ -158,6 +142,20 @@ void UKF::UpdateRadar(const VectorXd &z)
   P_ = P_ - (K*S_*K.transpose());
 }
 ///////////////////////////////////////////////////////////////////////////////////////
+void UKF::updateLidar(const VectorXd &measurement) {
+
+  VectorXd z_pred = H_lidar_ * x_;
+  VectorXd y = measurement - z_pred;
+  MatrixXd Ht = H_lidar_.transpose();
+  MatrixXd S = H_lidar_ * P_ * Ht + R_lidar_;
+  MatrixXd PHt = P_ * Ht;
+  MatrixXd K = PHt * S.inverse();
+
+  //update state mean and covariance matrix
+  x_ = x_ + (K * y);
+  P_ = (I_ - K * H_lidar_) * P_;
+}
+///////////////////////////////////////////////////////////////////////////////////////
 void UKF::predictMeanAndCovariance()
 {
   MatrixXd Xsig_pred = Xsig_pred_.Get();
@@ -171,10 +169,9 @@ void UKF::predictMeanAndCovariance()
   {
     // state difference
     VectorXd x_diff = Xsig_pred.col(j) - x_;
-    //angle normalization TODO fmod()
-    while (x_diff(3) >  M_PI) x_diff(3)-=2.*M_PI;
-    while (x_diff(3) < -M_PI) x_diff(3)+=2.*M_PI;
-    P_ += weights_(j)*(Xsig_pred.col(j)-x_)*(Xsig_pred.col(j)-x_).transpose();
+    x_diff(3) = tools_.NormalizeAngle(x_diff(3));
+
+    P_ += weights_(j)*x_diff*x_diff.transpose();
   }
 }
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -238,7 +235,10 @@ void UKF::predictRadarMeasurement(size_t n_z)
   //calculate measurement covariance matrix S
   for(size_t j=0; j < Zsig_.cols(); ++j)
   {
-    S_ += weights_(j)*(Zsig_.col(j)-z_pred_)*(Zsig_.col(j)-z_pred_).transpose();
+    VectorXd z_diff = Zsig_.col(j)-z_pred_;
+    z_diff(1) = tools_.NormalizeAngle(z_diff(1));
+
+    S_ += weights_(j)*z_diff*z_diff.transpose();
   }
 
   MatrixXd R = MatrixXd(n_z, n_z);
