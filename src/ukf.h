@@ -4,18 +4,24 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <iostream>
 
 #include "tools.h"
 #include "data/TestDataFileHandler.hpp"
 #include "Eigen/Dense"
+#include "SigmaPoints.hpp"
 
 #define PRINT 1
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using namespace std;
+using std::vector;
 
 class UKF {
 public:
+  int n_x_; ///* State dimension
+  int n_aug_; ///* Augmented state dimension
 
   ///* initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
@@ -33,13 +39,7 @@ public:
   MatrixXd P_;
 
   ///* predicted sigma points matrix
-  MatrixXd Xsig_pred_;
-
-  ///* Process noise standard deviation longitudinal acceleration in m/s^2
-  double std_a_;
-
-  ///* Process noise standard deviation yaw acceleration in rad/s^2
-  double std_yawdd_;
+  //MatrixXd Xsig_pred_;
 
   ///* Laser measurement noise standard deviation position1 in m
   double std_laspx_;
@@ -59,12 +59,6 @@ public:
   ///* Weights of sigma points
   VectorXd weights_;
 
-  ///* State dimension
-  int n_x_;
-
-  ///* Augmented state dimension
-  int n_aug_;
-
   ///* Sigma point spreading parameter
   double lambda_;
 
@@ -73,6 +67,8 @@ public:
 
   ///* the current NIS for laser
   double NIS_laser_;
+
+  SigmaPoints Xsig_pred_;
 
   /**
    * Constructor
@@ -131,10 +127,10 @@ private:
 
   double getDeltaTime(long timestamp);
   void initalize(const MeasurementPackage &measurement);
-  MatrixXd generateSigmaPoints();
-  void predictSigmaPoints(MatrixXd &Xsig_aug, double dt);
+  //MatrixXd generateSigmaPoints();
+  //void predictSigmaPoints(MatrixXd &Xsig_aug, double dt);
   void predictMeanAndCovariance();
-  VectorXd predictSigmaPointColumn(VectorXd& row, double dt);
+  //VectorXd predictSigmaPointColumn(VectorXd& row, double dt);
   VectorXd hFuncRadar(const VectorXd & x);
   void predictRadarMeasurement(size_t n_z);
 };
