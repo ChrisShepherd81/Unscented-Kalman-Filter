@@ -11,8 +11,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "Eigen/Dense"
+
 #include "Data.hpp"
+#include "../Eigen/Dense"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;

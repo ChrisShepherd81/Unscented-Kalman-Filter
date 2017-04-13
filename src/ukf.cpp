@@ -167,8 +167,8 @@ MatrixXd UKF::generateSigmaPoints()
 
   //create square root matrix
   MatrixXd A = P_aug.llt().matrixL();
-
   MatrixXd B = (A *std::sqrt(lambda_ + n_aug_));
+
   //create sigma point matrix
   MatrixXd Xsig_aug = MatrixXd::Zero(n_aug_, 2 * n_aug_ + 1);
   Xsig_aug.block(0,1,B.rows(),B.cols()) = B;
@@ -198,24 +198,6 @@ void UKF::predictSigmaPoints(MatrixXd &Xsig_aug, double dt)
 ///////////////////////////////////////////////////////////////////////////////////////
 void UKF::predictMeanAndCovariance()
 {
-  //predicted state mean
-//  x_.fill(0.0);
-//  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
-//    x_ = x_+ weights_(i) * Xsig_pred_.col(i);
-//  }
-//
-//  //predicted state covariance matrix
-//  P_.fill(0.0);
-//  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
-//
-//    // state difference
-//    VectorXd x_diff = Xsig_pred_.col(i) - x_;
-//    //angle normalization
-//    while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
-//    while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
-//
-//    P_ = P_ + weights_(i) * x_diff * x_diff.transpose() ;
-//  }
   //predict state mean
   for(size_t  i=0; i < Xsig_pred_.rows(); ++i)
     x_(i) = Xsig_pred_.row(i)*weights_;
@@ -224,6 +206,11 @@ void UKF::predictMeanAndCovariance()
   P_.fill(0);
   for(size_t j=0; j < Xsig_pred_.cols(); ++j)
   {
+    // state difference
+    VectorXd x_diff = Xsig_pred_.col(j) - x_;
+    //angle normalization TODO fmod()
+    while (x_diff(3) >  M_PI) x_diff(3)-=2.*M_PI;
+    while (x_diff(3) < -M_PI) x_diff(3)+=2.*M_PI;
     P_ += weights_(j)*(Xsig_pred_.col(j)-x_)*(Xsig_pred_.col(j)-x_).transpose();
   }
 }
@@ -280,9 +267,6 @@ VectorXd UKF::hFuncRadar(const VectorXd & x)
   double py = x(1);
 
   double phi = std::atan2(py, px);
-  //angle normalization
-  while (phi> M_PI) phi-=2.*M_PI;
-  while (phi<-M_PI) phi+=2.*M_PI;
   zTemp(1) = phi;
 
   double px2py2 = (px*px)+(py*py);

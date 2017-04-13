@@ -8,7 +8,7 @@
 #ifndef SRC_DATA_HPP_
 #define SRC_DATA_HPP_
 
-#include "Eigen/Dense"
+#include "../Eigen/Dense"
 ///////////////////////////////////////////////////////////////////////////////////////
 class Data
 {
