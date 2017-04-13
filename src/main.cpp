@@ -49,6 +49,10 @@ int main(int argc, char* argv[])
   PlotData plot_laser("Laser Measurements");
   PlotData plot_radar("Radar Measurements");
   PlotData plot_ground("Ground truth");
+  PlotData plot_NIS_radar("NIS Radar");
+  PlotData plot_NIS_lidar("NIS Lidar");
+  size_t nis_count_lidar = 0;
+  size_t nis_count_radar = 0;
 #endif
 
   fileHandler.writeFileHeader();
@@ -61,7 +65,6 @@ int main(int argc, char* argv[])
     // output the estimation
     VectorXd estimation = ukf.GetX();
     fileHandler.write_to_file(estimation);
-
 #if GNU_PLOT
     plot_estimations.addPoint(estimation);
 #endif
@@ -73,6 +76,7 @@ int main(int argc, char* argv[])
       fileHandler.write_to_file(measurement_pack_list[k].values, 2);
 #if GNU_PLOT
       plot_laser.addPoint(measurement_pack_list[k].values);
+      plot_NIS_lidar.addPoint(nis_count_lidar++, ukf.GetNIS());
 #endif
     }
     else if (measurement_pack_list[k].sensor_type == MeasurementPackage::RADAR)
@@ -88,11 +92,13 @@ int main(int argc, char* argv[])
 
 #if GNU_PLOT
       plot_radar.addPoint(x, y);
+      plot_NIS_radar.addPoint(nis_count_radar++, ukf.GetNIS());
 #endif
     }
 
     // output the ground truth packages
     fileHandler.write_to_file(gt_pack_list[k].values);
+    fileHandler.write_to_file(ukf.GetNIS());
     fileHandler.write_to_file("\n");
 
 #if GNU_PLOT
@@ -124,10 +130,18 @@ int main(int argc, char* argv[])
   gp.plot_xy(plot_estimations.getAllX(), plot_estimations.getAllY(), plot_estimations.getTitle());
 
 
+  Gnuplot gp2;
+  gp2.set_legend("top left");
+  gp2.set_style("lines lc rgb 'blue'");
+  gp2.plot_xy(plot_NIS_lidar.getAllX(), plot_NIS_lidar.getAllY(), plot_NIS_lidar.getTitle());
+  gp2.set_style("lines lc rgb 'green'");
+  gp2.plot_xy(plot_NIS_radar.getAllX(), plot_NIS_radar.getAllY(), plot_NIS_radar.getTitle());
+
   std::cout << "Press 'Enter' to continue...";
   std::cin.ignore();
 
   gp.remove_tmpfiles();
+  gp2.remove_tmpfiles();
 #endif
   std::cout << "Program exit.";
   return 0;

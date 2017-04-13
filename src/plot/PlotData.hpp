@@ -23,6 +23,7 @@ public:
 	void addPoint(double x, double y);
 	auto getAllX() const -> std::vector<double>;
 	auto getAllY() const -> std::vector<double>;
+	bool empty() const;
 	std::string getTitle() const;
 	virtual ~PlotData() {};
 };

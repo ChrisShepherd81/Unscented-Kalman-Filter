@@ -7,38 +7,42 @@
 
 #include "SigmaPoints.hpp"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-SigmaPoints::~SigmaPoints() {
-  // TODO Auto-generated destructor stub
+SigmaPoints::SigmaPoints(size_t n_aug, size_t n_x, double std_a, double std_yawdd)
+   : n_aug_(n_aug), n_x_(n_x), std_a_(std_a), std_yawdd_(std_yawdd)
+{
+  Xsig_pred_ = MatrixXd::Zero(n_x_, 2 * n_aug_ + 1);
+  lambda_ = 3.0 - n_aug_;
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+SigmaPoints::~SigmaPoints() {}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 MatrixXd SigmaPoints::generateSigmaPoints(const VectorXd &x, const MatrixXd &P)
 {
   //create augmented mean vector
-    VectorXd x_aug = VectorXd::Zero(n_aug_);
-    x_aug.head(n_x_) = x;
+  VectorXd x_aug = VectorXd::Zero(n_aug_);
+  x_aug.head(n_x_) = x;
 
-    //create augmented state covariance
-    MatrixXd P_aug = MatrixXd::Zero(n_aug_, n_aug_);
-    P_aug.topLeftCorner(P.rows(), P.cols()) = P;
-    P_aug(5,5) = std_a_*std_a_;
-    P_aug(6,6) = std_yawdd_*std_yawdd_;
+  //create augmented state covariance
+  MatrixXd P_aug = MatrixXd::Zero(n_aug_, n_aug_);
+  P_aug.topLeftCorner(P.rows(), P.cols()) = P;
+  P_aug(5,5) = std_a_*std_a_;
+  P_aug(6,6) = std_yawdd_*std_yawdd_;
 
-    //create square root matrix
-    MatrixXd A = P_aug.llt().matrixL();
-    MatrixXd B = (A *std::sqrt(lambda_ + n_aug_));
+  //create square root matrix
+  MatrixXd A = P_aug.llt().matrixL();
+  MatrixXd B = (A *std::sqrt(lambda_ + n_aug_));
 
-    //create sigma point matrix
-    MatrixXd Xsig_aug = MatrixXd::Zero(n_aug_, 2 * n_aug_ + 1);
-    Xsig_aug.block(0,1,B.rows(),B.cols()) = B;
-    Xsig_aug.block(0,1+B.cols(),B.rows(),B.cols()) = -B;
-    Xsig_aug = Xsig_aug.colwise() + x_aug;
+  //create sigma point matrix
+  MatrixXd Xsig_aug = MatrixXd::Zero(n_aug_, 2 * n_aug_ + 1);
+  Xsig_aug.block(0,1,B.rows(),B.cols()) = B;
+  Xsig_aug.block(0,1+B.cols(),B.rows(),B.cols()) = -B;
+  Xsig_aug = Xsig_aug.colwise() + x_aug;
 
-  #if PRINT
-    std::cout << "Xsig_aug = \n" << Xsig_aug << std::endl;
-  #endif
+#if PRINT
+  std::cout << "Xsig_aug = \n" << Xsig_aug << std::endl;
+#endif
 
-    return Xsig_aug;
+  return Xsig_aug;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SigmaPoints::predictSigmaPoints(const VectorXd &x, const MatrixXd &P, double dt)

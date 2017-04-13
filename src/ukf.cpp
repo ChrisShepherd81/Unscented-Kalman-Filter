@@ -3,7 +3,7 @@
 //size_t n_aug, size_t n_x, double std_a, double std_yawdd, double lambda
 UKF::UKF() : Xsig_pred_(n_aug_, n_x_, 0.7, 0.5)
 {
-  use_laser_ = false;
+  use_laser_ = true;
   use_radar_ = true;
 
   NIS_ = 0;
@@ -58,12 +58,12 @@ void UKF::initalizeMatrices()
   //observation model mapping matrix lidar
   H_lidar_ = MatrixXd::Zero(2, n_x_);
   H_lidar_ << 1, 0, 0, 0, 0,
-             0, 1, 0, 0, 0;
+              0, 1, 0, 0, 0;
 
   //measurement noise matrix - lidar
   R_lidar_ = MatrixXd::Zero(2, 2);
   R_lidar_ << std_laspx_*std_laspx_, 0,
-             0, std_laspy_*std_laspy_;
+              0, std_laspy_*std_laspy_;
 
   I_ = MatrixXd::Identity(n_x_, n_x_);
 }
@@ -138,22 +138,29 @@ void UKF::updateRadar(const VectorXd &z)
   MatrixXd K = Tc*S_.inverse();
 
   //update state mean and covariance matrix
-  x_ = x_ + K*(z-z_pred_);
+  VectorXd z_diff = z-z_pred_;
+  x_ = x_ + K*z_diff;
   P_ = P_ - (K*S_*K.transpose());
+
+  //Calculate NIS
+  this->NIS_ = z_diff.transpose()*S_.inverse()*z_diff;
 }
 ///////////////////////////////////////////////////////////////////////////////////////
-void UKF::updateLidar(const VectorXd &measurement) {
+void UKF::updateLidar(const VectorXd &z) {
 
   VectorXd z_pred = H_lidar_ * x_;
-  VectorXd y = measurement - z_pred;
+  VectorXd z_diff = z - z_pred;
   MatrixXd Ht = H_lidar_.transpose();
   MatrixXd S = H_lidar_ * P_ * Ht + R_lidar_;
   MatrixXd PHt = P_ * Ht;
   MatrixXd K = PHt * S.inverse();
 
   //update state mean and covariance matrix
-  x_ = x_ + (K * y);
+  x_ = x_ + (K * z_diff);
   P_ = (I_ - K * H_lidar_) * P_;
+
+  //Calculate NIS
+  this->NIS_ = z_diff.transpose()*S.inverse()*z_diff;
 }
 ///////////////////////////////////////////////////////////////////////////////////////
 void UKF::predictMeanAndCovariance()
@@ -171,7 +178,7 @@ void UKF::predictMeanAndCovariance()
     VectorXd x_diff = Xsig_pred.col(j) - x_;
     x_diff(3) = tools_.NormalizeAngle(x_diff(3));
 
-    P_ += weights_(j)*x_diff*x_diff.transpose();
+   P_ += weights_(j)*x_diff*x_diff.transpose();
   }
 }
 ///////////////////////////////////////////////////////////////////////////////////////

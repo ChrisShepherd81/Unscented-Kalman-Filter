@@ -56,6 +56,11 @@ public:
     return P_;
   }
 
+  const double GetNIS() const
+  {
+    return NIS_;
+  }
+
 private:
   const size_t n_x_ = 5; ///* State dimension
   static constexpr size_t n_aug_ = 7; ///* Augmented state dimension
