@@ -10,18 +10,18 @@ using std::vector;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 UKF::UKF() {
-  use_laser_ = false;
-  use_radar_ = true;
-  x_ = VectorXd::Zero(5);
-  P_ = MatrixXd::Identity(5, 5);
-  std_a_ = 0.2;
-  std_yawdd_ = 0.2;
+  use_laser_ = true;
+  use_radar_ = false;
+  n_x_ = 5;
+  x_ = VectorXd::Zero(n_x_);
+  P_ = MatrixXd::Identity(n_x_, n_x_);
+  std_a_ = 0.7;
+  std_yawdd_ = 0.5;
   std_laspx_ = 0.15;
   std_laspy_ = 0.15;
   std_radr_ = 0.3;
   std_radphi_ = 0.03;
   std_radrd_ = 0.3;
-  n_x_ = 5;
   n_aug_ = 7;
 
   //define spreading parameter
@@ -35,6 +35,18 @@ UKF::UKF() {
   double w2 = 1.0/(2*(lambda_+n_aug_));
   weights_ += VectorXd::Constant(2*n_aug_+1, w2);
   weights_(0) = w1;
+
+  //observation model mapping matrix lidar
+  H_lidar_ = MatrixXd::Zero(2, n_x_);
+  H_lidar_ << 1, 0, 0, 0, 0,
+              0, 1, 0, 0, 0;
+
+  //measurement noise matrix - lidar
+  R_lidar_ = MatrixXd::Zero(2, 2);
+  R_lidar_ << std_laspx_*std_laspx_, 0,
+              0, std_laspy_*std_laspy_;
+
+  I_ = MatrixXd::Identity(n_x_, n_x_);
 
   NIS_radar_ = 0;
   NIS_laser_ = 0;
@@ -67,6 +79,7 @@ void UKF::initalize(const MeasurementPackage &measurement)
 ///////////////////////////////////////////////////////////////////////////////////////
 void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
 {
+  cout << "ProcessMeasurement" << endl;
   /*****************************************************************************
   *  Initialization
   ****************************************************************************/
@@ -100,6 +113,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
   else if((measurement.sensor_type == MeasurementPackage::LASER) && use_laser_)
   {
     // Laser updates
+    std::cout << "Upadte with lidar data\n";
     this->UpdateLidar(measurement.values);
   }
   else
@@ -120,14 +134,17 @@ void UKF::Prediction(double delta_t)
 }
 ///////////////////////////////////////////////////////////////////////////////////////
 void UKF::UpdateLidar(const VectorXd &measurement) {
-  /**
-  TODO:
 
-  Complete this function! Use lidar data to update the belief about the object's
-  position. Modify the state vector, x_, and covariance, P_.
+  VectorXd z_pred = H_lidar_ * x_;
+  VectorXd y = measurement - z_pred;
+  MatrixXd Ht = H_lidar_.transpose();
+  MatrixXd S = H_lidar_ * P_ * Ht + R_lidar_;
+  MatrixXd PHt = P_ * Ht;
+  MatrixXd K = PHt * S.inverse();
 
-  You'll also need to calculate the lidar NIS.
-  */
+  //new estimate
+  x_ = x_ + (K * y);
+  P_ = (I_ - K * H_lidar_) * P_;
 }
 ///////////////////////////////////////////////////////////////////////////////////////
 void UKF::UpdateRadar(const VectorXd &z)

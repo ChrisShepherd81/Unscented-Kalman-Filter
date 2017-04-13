@@ -123,8 +123,12 @@ private:
   Tools tools_;
   long previous_timestamp_ = 0;
   MatrixXd Zsig_;
+  MatrixXd H_lidar_;
+  MatrixXd R_lidar_;
   MatrixXd S_;
+  MatrixXd I_;
   VectorXd z_pred_;
+
   double getDeltaTime(long timestamp);
   void initalize(const MeasurementPackage &measurement);
   MatrixXd generateSigmaPoints();
