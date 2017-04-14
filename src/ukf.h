@@ -33,7 +33,7 @@ public:
   /**
    * Constructor
    */
-  UKF();
+  UKF(double std_a, double std_yawdd);
 
   /**
    * Destructor

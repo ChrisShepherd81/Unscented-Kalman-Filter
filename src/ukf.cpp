@@ -1,7 +1,7 @@
 #include "ukf.h"
 ///////////////////////////////////////////////////////////////////////////////////////
 //size_t n_aug, size_t n_x, double std_a, double std_yawdd, double lambda
-UKF::UKF() : Xsig_pred_(n_aug_, n_x_, 0.7, 0.5)
+UKF::UKF(double std_a, double std_yawdd) : Xsig_pred_(n_aug_, n_x_, std_a, std_yawdd, lambda_)
 {
   use_laser_ = true;
   use_radar_ = true;

@@ -19,7 +19,7 @@ using Eigen::VectorXd;
 class SigmaPoints
 {
  public:
-  SigmaPoints(size_t n_aug, size_t n_x, double std_a, double std_yawdd);
+  SigmaPoints(size_t n_aug, size_t n_x, double std_a, double std_yawdd, double lambda);
   virtual ~SigmaPoints();
 
   void predictSigmaPoints(const VectorXd &x, const MatrixXd &P, double dt);

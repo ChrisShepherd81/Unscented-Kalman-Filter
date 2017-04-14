@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
   fileHandler.read_file(measurement_pack_list, gt_pack_list);
 
   // Create a UKF instance
-  UKF ukf;
+  UKF ukf(25, 5.0);
 
   // used to compute the RMSE later
   vector<VectorXd> estimations;
@@ -131,10 +131,16 @@ int main(int argc, char* argv[])
 
 
   Gnuplot gp2;
+  double x_max = (double)std::max(nis_count_radar, nis_count_lidar);
   gp2.set_legend("top left");
+  gp2.set_xrange(0.0, x_max);
   gp2.set_style("lines lc rgb 'blue'");
+  gp2.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({5.991, 5.991}),
+               "0.95 " + plot_NIS_lidar.getTitle());
   gp2.plot_xy(plot_NIS_lidar.getAllX(), plot_NIS_lidar.getAllY(), plot_NIS_lidar.getTitle());
   gp2.set_style("lines lc rgb 'green'");
+  gp2.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({7.815, 7.815}),
+              "0.95 " + plot_NIS_radar.getTitle());
   gp2.plot_xy(plot_NIS_radar.getAllX(), plot_NIS_radar.getAllY(), plot_NIS_radar.getTitle());
 
   std::cout << "Press 'Enter' to continue...";

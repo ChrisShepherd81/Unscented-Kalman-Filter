@@ -7,11 +7,10 @@
 
 #include "SigmaPoints.hpp"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-SigmaPoints::SigmaPoints(size_t n_aug, size_t n_x, double std_a, double std_yawdd)
-   : n_aug_(n_aug), n_x_(n_x), std_a_(std_a), std_yawdd_(std_yawdd)
+SigmaPoints::SigmaPoints(size_t n_aug, size_t n_x, double std_a, double std_yawdd, double lambda)
+   : n_aug_(n_aug), n_x_(n_x), std_a_(std_a), std_yawdd_(std_yawdd), lambda_(lambda)
 {
   Xsig_pred_ = MatrixXd::Zero(n_x_, 2 * n_aug_ + 1);
-  lambda_ = 3.0 - n_aug_;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 SigmaPoints::~SigmaPoints() {}
