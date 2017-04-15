@@ -11,8 +11,6 @@
 #include "Eigen/Dense"
 #include "SigmaPoints.hpp"
 
-#define PRINT 1
-
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using namespace std;

@@ -131,14 +131,15 @@ void UKF::updateRadar(const VectorXd &z)
   //calculate cross correlation matrix
   for(size_t j=0; j < Zsig_.cols(); ++j)
   {
-    Tc += weights_(j)*(Xsig_pred_.Get().col(j)-x_)*(Zsig_.col(j)-z_pred_).transpose();
+    Tc += weights_(j)*tools_.SubtractAndNormalizeAngle(Xsig_pred_.Get().col(j),x_,3)
+        *tools_.SubtractAndNormalizeAngle(Zsig_.col(j),z_pred_,1).transpose();
   }
 
   //calculate Kalman gain K;
   MatrixXd K = Tc*S_.inverse();
 
   //update state mean and covariance matrix
-  VectorXd z_diff = z-z_pred_;
+  VectorXd z_diff = tools_.SubtractAndNormalizeAngle(z, z_pred_, 1);
   x_ = x_ + K*z_diff;
   P_ = P_ - (K*S_*K.transpose());
 
@@ -175,8 +176,7 @@ void UKF::predictMeanAndCovariance()
   for(size_t j=0; j < Xsig_pred.cols(); ++j)
   {
     // state difference
-    VectorXd x_diff = Xsig_pred.col(j) - x_;
-    x_diff(3) = tools_.NormalizeAngle(x_diff(3));
+    VectorXd x_diff = tools_.SubtractAndNormalizeAngle(Xsig_pred.col(j), x_, 3);
 
    P_ += weights_(j)*x_diff*x_diff.transpose();
   }
@@ -242,8 +242,7 @@ void UKF::predictRadarMeasurement(size_t n_z)
   //calculate measurement covariance matrix S
   for(size_t j=0; j < Zsig_.cols(); ++j)
   {
-    VectorXd z_diff = Zsig_.col(j)-z_pred_;
-    z_diff(1) = tools_.NormalizeAngle(z_diff(1));
+    VectorXd z_diff = tools_.SubtractAndNormalizeAngle(Zsig_.col(j), z_pred_, 1);
 
     S_ += weights_(j)*z_diff*z_diff.transpose();
   }

@@ -27,6 +27,14 @@ int main(int argc, char* argv[])
   string in_file_name_ = argv[1];
   string out_file_name_ = argv[2];
 
+  double std_a = 0.9;
+  double std_yawdd = 0.6;
+  if(argc == 5)
+  {
+    std_a = std::stod(argv[3]);
+    std_yawdd = std::stod(argv[4]);
+  }
+
   TestDataFileHandler fileHandler(in_file_name_, out_file_name_);
 
   if(!fileHandler.check_files())
@@ -38,7 +46,7 @@ int main(int argc, char* argv[])
   fileHandler.read_file(measurement_pack_list, gt_pack_list);
 
   // Create a UKF instance
-  UKF ukf(25, 5.0);
+  UKF ukf(std_a, std_yawdd);
 
   // used to compute the RMSE later
   vector<VectorXd> estimations;
@@ -111,6 +119,8 @@ int main(int argc, char* argv[])
 
   // compute the accuracy (RMSE)
   Tools tools;
+  //Target sample1 : [0.09, 0.09, 0.65, 0.65]
+  //Target sample2 : [0.20, 0.20, 0.55, 0.55]
   cout << "Accuracy - RMSE:" << endl << tools.CalculateRMSE(estimations, ground_truth, GroundTruthVectorLength) << endl;
 
 #if GNU_PLOT
@@ -135,12 +145,10 @@ int main(int argc, char* argv[])
   gp2.set_legend("top left");
   gp2.set_xrange(0.0, x_max);
   gp2.set_style("lines lc rgb 'blue'");
-  gp2.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({5.991, 5.991}),
-               "0.95 " + plot_NIS_lidar.getTitle());
   gp2.plot_xy(plot_NIS_lidar.getAllX(), plot_NIS_lidar.getAllY(), plot_NIS_lidar.getTitle());
+  gp2.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({5.991, 5.991}), "\u03c7\u00b2 0.95 Lidar");
   gp2.set_style("lines lc rgb 'green'");
-  gp2.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({7.815, 7.815}),
-              "0.95 " + plot_NIS_radar.getTitle());
+  gp2.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({7.815, 7.815}), "\u03c7\u00b2 0.95 Radar");
   gp2.plot_xy(plot_NIS_radar.getAllX(), plot_NIS_radar.getAllY(), plot_NIS_radar.getTitle());
 
   std::cout << "Press 'Enter' to continue...";
@@ -165,9 +173,9 @@ void check_arguments(int argc, char* argv[]) {
     cerr << usage_instructions << endl;
   } else if (argc == 2) {
     cerr << "Please include an output file.\n" << usage_instructions << endl;
-  } else if (argc == 3) {
+  } else if (argc <= 5) {
     has_valid_args = true;
-  } else if (argc > 3) {
+  } else {
     cerr << "Too many arguments.\n" << usage_instructions << endl;
   }
 
