@@ -28,8 +28,6 @@ using std::string;
 using std::cout;
 using std::endl;
 
-const size_t GroundTruthVectorLength = 4;
-
 void check_arguments(int argc, char* argv[]);
 
 int main(int argc, char* argv[])
@@ -95,9 +93,11 @@ int main(int argc, char* argv[])
     duration<double> time_span = std::chrono::duration_cast<duration<double>>(endTime - startTime);
     processTime += time_span.count();
 #endif
+
     // output the estimation
     VectorXd estimation = ukf.GetX();
     fileHandler.write_to_file(estimation);
+
 #if GNU_PLOT
     plot_estimations.addPoint(estimation);
 #endif
@@ -151,6 +151,7 @@ int main(int argc, char* argv[])
   Tools tools;
   //Target sample1 : [0.09, 0.09, 0.65, 0.65]
   //Target sample2 : [0.20, 0.20, 0.55, 0.55]
+  const size_t GroundTruthVectorLength = 4;
   cout << "Accuracy - RMSE:" << endl << tools.CalculateRMSE(estimations, ground_truth, GroundTruthVectorLength) << endl;
 
 #if GNU_PLOT
