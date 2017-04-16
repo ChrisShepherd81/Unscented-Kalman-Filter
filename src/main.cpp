@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
   fileHandler.read_file(measurement_pack_list, gt_pack_list);
 
   // Create a UKF instance
-  UKF ukf(std_a, std_yawdd);
+  UKF ukf(std_a, std_yawdd, UKF::UseSensor::Both);
 
   // used to compute the RMSE later
   vector<VectorXd> estimations;
@@ -155,37 +155,41 @@ int main(int argc, char* argv[])
   cout << "Accuracy - RMSE:" << endl << tools.CalculateRMSE(estimations, ground_truth, GroundTruthVectorLength) << endl;
 
 #if GNU_PLOT
-  Gnuplot gp;
-  gp.set_legend("top left");
+  Gnuplot posGraph;
+  posGraph.set_legend("top left");
 
-  gp.set_style("points pt 5 ps .5 lc rgb 'red'");
-  gp.plot_xy(plot_ground.getAllX(), plot_ground.getAllY(), plot_ground.getTitle());
+  posGraph.set_style("points pt 5 ps .5 lc rgb 'red'");
+  posGraph.plot_xy(plot_ground.getAllX(), plot_ground.getAllY(), plot_ground.getTitle());
 
-  gp.set_style("points pt 2 ps 0.5 lc rgb 'green'");
-  gp.plot_xy(plot_radar.getAllX(), plot_radar.getAllY(), plot_radar.getTitle());
+  posGraph.set_style("points pt 2 ps 0.5 lc rgb 'green'");
+  posGraph.plot_xy(plot_radar.getAllX(), plot_radar.getAllY(), plot_radar.getTitle());
 
-  gp.set_style("points pt 3 ps 0.5 lc rgb 'blue'");
-  gp.plot_xy(plot_laser.getAllX(), plot_laser.getAllY(), plot_laser.getTitle());
+  posGraph.set_style("points pt 3 ps 0.5 lc rgb 'blue'");
+  posGraph.plot_xy(plot_laser.getAllX(), plot_laser.getAllY(), plot_laser.getTitle());
 
-  gp.set_style("points pt 1 ps 1 lc rgb 'black'");
-  gp.plot_xy(plot_estimations.getAllX(), plot_estimations.getAllY(), plot_estimations.getTitle());
+  posGraph.set_style("points pt 1 ps 1 lc rgb 'black'");
+  posGraph.plot_xy(plot_estimations.getAllX(), plot_estimations.getAllY(), plot_estimations.getTitle());
 
-
-  Gnuplot gp2;
+  Gnuplot nisGraph;
   double x_max = (double)std::max(nis_count_radar, nis_count_lidar);
-  gp2.set_legend("top left");
-  gp2.set_xrange(0.0, x_max);
-  gp2.set_style("lines lc rgb 'blue'");
-  gp2.plot_xy(plot_NIS_lidar.getAllX(), plot_NIS_lidar.getAllY(), plot_NIS_lidar.getTitle());
-  gp2.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({5.991, 5.991}), "\u03c7\u00b2 0.95 Lidar");
-  gp2.set_style("lines lc rgb 'green'");
-  gp2.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({7.815, 7.815}), "\u03c7\u00b2 0.95 Radar");
-  gp2.plot_xy(plot_NIS_radar.getAllX(), plot_NIS_radar.getAllY(), plot_NIS_radar.getTitle());
+  nisGraph.set_legend("top left");
+  nisGraph.set_xrange(0.0, x_max);
+
+  nisGraph.set_style("lines lc rgb 'blue'");
+  nisGraph.plot_xy(plot_NIS_lidar.getAllX(), plot_NIS_lidar.getAllY(), plot_NIS_lidar.getTitle());
+  nisGraph.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({5.991, 5.991}), "\u03c7\u00b2 0.95 Lidar");
+  std::cout << "Values over 0.95 " << count_if(plot_NIS_lidar.getAllY().begin(), plot_NIS_lidar.getAllY().end(), [](double a){return a > 5.991;});
+
+  nisGraph.set_style("lines lc rgb 'green'");
+  nisGraph.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({7.815, 7.815}), "\u03c7\u00b2 0.95 Radar");
+  nisGraph.plot_xy(plot_NIS_radar.getAllX(), plot_NIS_radar.getAllY(), plot_NIS_radar.getTitle());^
+  std::cout << "Values over 0.95 " << (double)count_if(plot_NIS_radar.getAllY().begin(), plot_NIS_radar.getAllY().end(), [](double a){return a > 7.815;})/plot_NIS_radar.getAllY().size();
+
   std::cout << "Press 'Enter' to continue...";
   std::cin.ignore();
 
-  gp.remove_tmpfiles();
-  gp2.remove_tmpfiles();
+  posGraph.remove_tmpfiles();
+  nisGraph.remove_tmpfiles();
 #endif
   std::cout << "Program exit.";
   return 0;

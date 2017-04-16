@@ -1,11 +1,9 @@
 #include "ukf.h"
 ///////////////////////////////////////////////////////////////////////////////////////
 //size_t n_aug, size_t n_x, double std_a, double std_yawdd, double lambda
-UKF::UKF(double std_a, double std_yawdd) : Xsig_pred_(n_aug_, n_x_, std_a, std_yawdd, lambda_)
+UKF::UKF(double std_a, double std_yawdd, UseSensor sensors) : Xsig_pred_(n_aug_, n_x_, std_a, std_yawdd, lambda_)
 {
-  use_laser_ = true;
-  use_radar_ = true;
-
+  usedSensors_ = sensors;
   NIS_ = 0;
   is_initialized_ = false;
 }
@@ -85,9 +83,9 @@ void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
     return;
   }
 
-  if ((measurement.sensor_type == MeasurementPackage::RADAR) && !use_radar_)
+  if ((measurement.sensor_type == MeasurementPackage::RADAR) && !(usedSensors_ & UseSensor::Radar))
     return;
-  if ((measurement.sensor_type == MeasurementPackage::LASER) && !use_laser_)
+  if ((measurement.sensor_type == MeasurementPackage::LASER) && !(usedSensors_ & UseSensor::Lidar))
     return;
 
   /*****************************************************************************
@@ -100,12 +98,12 @@ void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
    *  Update
    ****************************************************************************/
   //Use the sensor type to perform the update step
-  if ((measurement.sensor_type == MeasurementPackage::RADAR) && use_radar_)
+  if ((measurement.sensor_type == MeasurementPackage::RADAR) && (usedSensors_ & UseSensor::Radar))
   {
     // Radar updates
     this->updateRadar(measurement.values);
   }
-  else if((measurement.sensor_type == MeasurementPackage::LASER) && use_laser_)
+  else if((measurement.sensor_type == MeasurementPackage::LASER) && (usedSensors_ & UseSensor::Lidar))
   {
     // Laser updates
     this->updateLidar(measurement.values);
@@ -114,8 +112,8 @@ void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
     return;
 
 #if PRINT
-  cout << "x_ = \n" << GetX() << endl;
-  cout << "P_ = \n" << GetP() << endl;
+  cout << "x_ = \n" << x_ << endl;
+  cout << "P_ = \n" << P_ << endl;
 #endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////

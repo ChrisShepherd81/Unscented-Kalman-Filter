@@ -14,7 +14,7 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-#define PRINT 0
+#define PRINT 1
 
 class SigmaPoints
 {

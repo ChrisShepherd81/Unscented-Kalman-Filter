@@ -18,7 +18,9 @@ using std::vector;
 
 class UKF {
 public:
-  UKF(double std_a, double std_yawdd);
+  enum UseSensor { Radar=1, Lidar=2, Both=3 };
+
+  UKF(double std_a, double std_yawdd, UseSensor sensors);
   virtual ~UKF();
 
   /**
@@ -44,8 +46,7 @@ private:
   const double std_radphi_ = 0.03; //Radar noise standard deviation angle in rad
   const double std_radrd_  = 0.3;  //Radar noise standard deviation radius change in m/s
 
-  bool use_laser_; ///* if this is false, laser measurements will be ignored (except for init)
-  bool use_radar_; ///* if this is false, radar measurements will be ignored (except for init)
+  UseSensor usedSensors_;
 
   ///* Weights of sigma points
   VectorXd weights_;
