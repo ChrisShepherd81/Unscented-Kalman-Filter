@@ -1010,7 +1010,7 @@ Gnuplot& Gnuplot::set_style(const std::string &stylestr)
         stylestr.find("histeps")        == std::string::npos  &&
         stylestr.find("boxes")          == std::string::npos  &&  // 1-4 columns of data are required
         stylestr.find("filledcurves")   == std::string::npos  &&
-        stylestr.find("histograms")     == std::string::npos  )   //only for one data column
+        stylestr.find("histograms")     == std::string::npos  ) //only for one data column
 //        stylestr.find("labels")         == std::string::npos  &&  // 3 columns of data are required
 //        stylestr.find("xerrorbars")     == std::string::npos  &&  // 3-4 columns of data are required
 //        stylestr.find("xerrorlines")    == std::string::npos  &&  // 3-4 columns of data are required

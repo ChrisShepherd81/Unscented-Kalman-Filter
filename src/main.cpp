@@ -5,6 +5,8 @@
 #include "data/TestDataFileHandler.hpp"
 
 #define TIME_MEASURE 0
+#define GNU_PLOT 0
+#define PARAMETER_SEARCH 0
 
 #if TIME_MEASURE
   #include <ctime>
@@ -15,9 +17,7 @@
   using std::chrono::duration;
 #endif
 
-#define GNU_PLOT 1
-
-#if GNU_PLOT
+#if GNU_PLOT or PARAMETER_SEARCH  //GNU_PLOT
   #include "plot/gnuplot_i.hpp"
   #include "plot/PlotData.hpp"
 #endif
@@ -44,6 +44,27 @@ int main(int argc, char* argv[])
     std_yawdd = std::stod(argv[4]);
   }
 
+#if PARAMETER_SEARCH
+  vector<double> std_a_list1;
+  vector<double> std_yawdd_list1;
+  vector<double> rsme_sum_list1;
+
+  vector<double> std_a_list2;
+  vector<double> std_yawdd_list2;
+  vector<double> rsme_sum_list2;
+
+  for(size_t file=1; file <=2; ++file)
+  {
+    if(file==1)
+      in_file_name_ = "./data/sample-laser-radar-measurement-data-1.txt";
+    else
+      in_file_name_ = "./data/sample-laser-radar-measurement-data-2.txt";
+
+  for(double std_a = 0.0; std_a <= 2; std_a += 0.1) {
+    for(double std_yawdd = 0.0; std_yawdd <= 1; std_yawdd += 0.1) {
+#endif
+
+  std::cout << "std_a = " << std_a << " std_yawdd = " << std_yawdd << std::endl;
   TestDataFileHandler fileHandler(in_file_name_, out_file_name_);
 
   if(!fileHandler.check_files())
@@ -152,7 +173,31 @@ int main(int argc, char* argv[])
   //Target sample1 : [0.09, 0.09, 0.65, 0.65]
   //Target sample2 : [0.20, 0.20, 0.55, 0.55]
   const size_t GroundTruthVectorLength = 4;
-  cout << "Accuracy - RMSE:" << endl << tools.CalculateRMSE(estimations, ground_truth, GroundTruthVectorLength) << endl;
+  VectorXd rsme = tools.CalculateRMSE(estimations, ground_truth, GroundTruthVectorLength);
+  cout << "Accuracy - RMSE:" << endl << rsme << endl;
+
+#if PARAMETER_SEARCH
+  if(rsme.sum() > 0 && rsme.sum() < 2)
+  {
+    VectorXd mul = VectorXd(4);
+    mul << 3,3,1,1;
+
+    if(file==1)
+    {
+      std_a_list1.push_back(std_a);
+      std_yawdd_list1.push_back(std_yawdd);
+      rsme_sum_list1.push_back((rsme.sum()));
+    }
+    else
+    {
+        std_a_list2.push_back(std_a);
+        std_yawdd_list2.push_back(std_yawdd);
+        rsme_sum_list2.push_back((rsme.sum()));
+    }
+  }
+  }}} //End of loops
+#endif
+
 
 #if GNU_PLOT
   Gnuplot posGraph;
@@ -178,19 +223,34 @@ int main(int argc, char* argv[])
   nisGraph.set_style("lines lc rgb 'blue'");
   nisGraph.plot_xy(plot_NIS_lidar.getAllX(), plot_NIS_lidar.getAllY(), plot_NIS_lidar.getTitle());
   nisGraph.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({5.991, 5.991}), "\u03c7\u00b2 0.95 Lidar");
-  std::cout << "Values over 0.95 " << count_if(plot_NIS_lidar.getAllY().begin(), plot_NIS_lidar.getAllY().end(), [](double a){return a > 5.991;});
 
   nisGraph.set_style("lines lc rgb 'green'");
   nisGraph.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({7.815, 7.815}), "\u03c7\u00b2 0.95 Radar");
-  nisGraph.plot_xy(plot_NIS_radar.getAllX(), plot_NIS_radar.getAllY(), plot_NIS_radar.getTitle());^
-  std::cout << "Values over 0.95 " << (double)count_if(plot_NIS_radar.getAllY().begin(), plot_NIS_radar.getAllY().end(), [](double a){return a > 7.815;})/plot_NIS_radar.getAllY().size();
+  nisGraph.plot_xy(plot_NIS_radar.getAllX(), plot_NIS_radar.getAllY(), plot_NIS_radar.getTitle());
+
+#endif
+
+#if PARAMETER_SEARCH
+  Gnuplot posGraph;
+  posGraph.set_xlabel("std a");
+  posGraph.set_ylabel("std yawdd");
+  posGraph.set_style("lines lc rgb 'black'");
+  posGraph.cmd("set dgrid3d 30,30");
+    posGraph.cmd("set hidden3d");
+  posGraph.plot_xyz(std_a_list1, std_yawdd_list1, rsme_sum_list1 );
+
+  posGraph.set_style("lines lc rgb 'blue'");
+  posGraph.plot_xyz(std_a_list2, std_yawdd_list2, rsme_sum_list2 );
+#endif
 
   std::cout << "Press 'Enter' to continue...";
   std::cin.ignore();
 
+#if GNU_PLOT
   posGraph.remove_tmpfiles();
   nisGraph.remove_tmpfiles();
 #endif
+
   std::cout << "Program exit.";
   return 0;
 }
