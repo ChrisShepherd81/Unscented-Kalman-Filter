@@ -33,7 +33,7 @@ For std_a = 0.9 m/s^2 and std_yawdd = 0.6 rad/s^2
 | 0.574702  | 0.528618 |
 
 ![parameter searching diagram](./misc/parameterSearch.png "Parameter searching diagram")
-![result diagram pos data 1](./data/Result_data_1_POS.png "Result postion diagram data 1")
-![result diagram NIS data 1](./data/Result_data_1_NIS.png "Result NIS diagram data 1")
-![result diagram pos data 2](./data/Result_data_2_POS.png "Result postion diagram data 2")
-![result diagram NIS data 2](./data/Result_data_2_NIS.png "Result NIS diagram data 2")
+![result diagram pos data 1](./misc/Result_data_1_POS.png "Result postion diagram data 1")
+![result diagram NIS data 1](./misc/Result_data_1_NIS.png "Result NIS diagram data 1")
+![result diagram pos data 2](./misc/Result_data_2_POS.png "Result postion diagram data 2")
+![result diagram NIS data 2](./misc/Result_data_2_NIS.png "Result NIS diagram data 2")
