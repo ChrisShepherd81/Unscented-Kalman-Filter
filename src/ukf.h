@@ -27,20 +27,9 @@ public:
    */
   void ProcessMeasurement(const MeasurementPackage &meas_package);
 
-  const VectorXd GetX() const
-  {
-    return x_;
-  }
-
-  const MatrixXd GetP() const
-  {
-    return P_;
-  }
-
-  const double GetNIS() const
-  {
-    return NIS_;
-  }
+  //Getters
+  const VectorXd GetX() const { return x_; }
+  const double GetNIS() const { return NIS_; }
 
 private:
 
@@ -105,7 +94,7 @@ private:
    */
   void updateRadar(const VectorXd &measurement);
 
-  //Initalization methods
+  //Initialization methods
   void initalize(const MeasurementPackage &measurement);
   void initalizeWeights();
   void initalizeMatrices();

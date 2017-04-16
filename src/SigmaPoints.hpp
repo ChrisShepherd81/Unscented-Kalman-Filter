@@ -23,10 +23,8 @@ class SigmaPoints
   virtual ~SigmaPoints();
 
   void predictSigmaPoints(const VectorXd &x, const MatrixXd &P, double dt);
-  MatrixXd& Get()
-  {
-    return Xsig_pred_;
-  }
+
+  MatrixXd& Get() { return Xsig_pred_; }
 
  private:
   MatrixXd Xsig_pred_;
