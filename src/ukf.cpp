@@ -65,6 +65,12 @@ void UKF::initalizeMatrices()
   R_lidar_ << std_laspx_*std_laspx_, 0,
               0, std_laspy_*std_laspy_;
 
+  //measurement noise matrix - radar
+  R_radar_ = MatrixXd(3, 3);
+  R_radar_ <<   std_radr_*std_radr_, 0, 0,
+                0, std_radphi_*std_radphi_, 0,
+                0, 0, std_radrd_*std_radrd_;
+
   I_ = MatrixXd::Identity(n_x_, n_x_);
 }
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -131,15 +137,15 @@ void UKF::updateRadar(const VectorXd &z)
   //calculate cross correlation matrix
   for(size_t j=0; j < Zsig_.cols(); ++j)
   {
-    Tc += weights_(j)*tools_.SubtractAndNormalizeAngle(Xsig_pred_.Get().col(j),x_,3)
-        *tools_.SubtractAndNormalizeAngle(Zsig_.col(j),z_pred_,1).transpose();
+    Tc += weights_(j)*tools_.SubtractAndNormalize(Xsig_pred_.Get().col(j),x_,3)
+        *tools_.SubtractAndNormalize(Zsig_.col(j),z_pred_,1).transpose();
   }
 
   //calculate Kalman gain K;
   MatrixXd K = Tc*S_.inverse();
 
   //update state mean and covariance matrix
-  VectorXd z_diff = tools_.SubtractAndNormalizeAngle(z, z_pred_, 1);
+  VectorXd z_diff = tools_.SubtractAndNormalize(z, z_pred_, 1);
   x_ = x_ + K*z_diff;
   P_ = P_ - (K*S_*K.transpose());
 
@@ -176,9 +182,9 @@ void UKF::predictMeanAndCovariance()
   for(size_t j=0; j < Xsig_pred.cols(); ++j)
   {
     // state difference
-    VectorXd x_diff = tools_.SubtractAndNormalizeAngle(Xsig_pred.col(j), x_, 3);
+    VectorXd x_diff = tools_.SubtractAndNormalize(Xsig_pred.col(j), x_, 3);
 
-   P_ += weights_(j)*x_diff*x_diff.transpose();
+    P_ += weights_(j)*x_diff*x_diff.transpose();
   }
 }
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -242,16 +248,12 @@ void UKF::predictRadarMeasurement(size_t n_z)
   //calculate measurement covariance matrix S
   for(size_t j=0; j < Zsig_.cols(); ++j)
   {
-    VectorXd z_diff = tools_.SubtractAndNormalizeAngle(Zsig_.col(j), z_pred_, 1);
+    VectorXd z_diff = tools_.SubtractAndNormalize(Zsig_.col(j), z_pred_, 1);
 
     S_ += weights_(j)*z_diff*z_diff.transpose();
   }
 
-  MatrixXd R = MatrixXd(n_z, n_z);
-  R <<  std_radr_*std_radr_, 0, 0,
-        0, std_radphi_*std_radphi_, 0,
-        0, 0, std_radrd_*std_radrd_;
-  S_ += R;
+  S_ += R_radar_;
 
 #if PRINT
   cout << "Zsig_ = \n" << Zsig_ << endl;

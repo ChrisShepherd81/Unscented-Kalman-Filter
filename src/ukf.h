@@ -18,24 +18,7 @@ using std::vector;
 
 class UKF {
 public:
-
-  ///* initially set to false, set to true in first call of ProcessMeasurement
-  bool is_initialized_;
-
-  ///* state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
-  VectorXd x_;
-
-  ///* state covariance matrix
-  MatrixXd P_;
-
-  /**
-   * Constructor
-   */
   UKF(double std_a, double std_yawdd);
-
-  /**
-   * Destructor
-   */
   virtual ~UKF();
 
   /**
@@ -60,6 +43,7 @@ public:
   }
 
 private:
+
   const size_t n_x_ = 5; ///* State dimension
   static constexpr size_t n_aug_ = 7; ///* Augmented state dimension
   static constexpr double lambda_ = 3.0 - n_aug_; ///* Sigma point spreading parameter
@@ -83,19 +67,22 @@ private:
 
   Tools tools_;
   long previous_timestamp_ = 0;
+  bool is_initialized_;
+
+  VectorXd x_; ///* state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
+  MatrixXd P_; ///* state covariance matrix
+
   MatrixXd Zsig_;
   VectorXd z_pred_;
   MatrixXd S_;
 
   MatrixXd H_lidar_;
   MatrixXd R_lidar_;
+  MatrixXd R_radar_;
   MatrixXd I_;
 
   double getDeltaTime(long timestamp);
-  void initalize(const MeasurementPackage &measurement);
-  void predictMeanAndCovariance();
   VectorXd hFuncRadar(const VectorXd & x);
-  void predictRadarMeasurement(size_t n_z);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance
@@ -103,6 +90,8 @@ private:
    * @param delta_t Time between k and k+1 in s
    */
   void prediction(double delta_t);
+  void predictRadarMeasurement(size_t n_z);
+  void predictMeanAndCovariance();
 
   /**
    * Updates the state and the state covariance matrix using a laser measurement
@@ -116,6 +105,8 @@ private:
    */
   void updateRadar(const VectorXd &measurement);
 
+  //Initalization methods
+  void initalize(const MeasurementPackage &measurement);
   void initalizeWeights();
   void initalizeMatrices();
 

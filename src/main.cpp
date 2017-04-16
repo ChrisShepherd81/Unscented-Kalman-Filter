@@ -4,11 +4,22 @@
 #include "ukf.h"
 #include "data/TestDataFileHandler.hpp"
 
+#define TIME_MEASURE 0
+
+#if TIME_MEASURE
+  #include <ctime>
+  #include <ratio>
+  #include <chrono>
+
+  using Hclock_t = std::chrono::high_resolution_clock;
+  using std::chrono::duration;
+#endif
+
 #define GNU_PLOT 1
 
 #if GNU_PLOT
-#include "plot/gnuplot_i.hpp"
-#include "plot/PlotData.hpp"
+  #include "plot/gnuplot_i.hpp"
+  #include "plot/PlotData.hpp"
 #endif
 
 using Eigen::VectorXd;
@@ -66,10 +77,24 @@ int main(int argc, char* argv[])
   fileHandler.writeFileHeader();
   //Call the EKF-based fusion
   size_t N = measurement_pack_list.size();
-  for (size_t k = 0; k < N; ++k) {
-    // start filtering from the second frame (the speed is unknown in the first frame)
-    ukf.ProcessMeasurement(measurement_pack_list[k]);
 
+#if TIME_MEASURE
+    double processTime = 0.0;
+#endif
+  for (size_t k = 0; k < N; ++k)
+  {
+#if TIME_MEASURE
+    Hclock_t::time_point startTime = Hclock_t::now();
+#endif
+    /*
+     * Process sensor fusion with UKF
+     */
+    ukf.ProcessMeasurement(measurement_pack_list[k]);
+#if TIME_MEASURE
+    Hclock_t::time_point endTime = Hclock_t::now();
+    duration<double> time_span = std::chrono::duration_cast<duration<double>>(endTime - startTime);
+    processTime += time_span.count();
+#endif
     // output the estimation
     VectorXd estimation = ukf.GetX();
     fileHandler.write_to_file(estimation);
@@ -117,6 +142,11 @@ int main(int argc, char* argv[])
     ground_truth.push_back(gt_pack_list[k].values);
   }
 
+#if TIME_MEASURE
+    std::cout << "Time for UKF: " << processTime << " secs.\n";
+    std::cout << "Avg processing time for measurement " << processTime/N << " secs.\n";
+#endif
+
   // compute the accuracy (RMSE)
   Tools tools;
   //Target sample1 : [0.09, 0.09, 0.65, 0.65]
@@ -150,7 +180,6 @@ int main(int argc, char* argv[])
   gp2.set_style("lines lc rgb 'green'");
   gp2.plot_xy(std::vector<double>({0, x_max}), std::vector<double>({7.815, 7.815}), "\u03c7\u00b2 0.95 Radar");
   gp2.plot_xy(plot_NIS_radar.getAllX(), plot_NIS_radar.getAllY(), plot_NIS_radar.getTitle());
-
   std::cout << "Press 'Enter' to continue...";
   std::cin.ignore();
 

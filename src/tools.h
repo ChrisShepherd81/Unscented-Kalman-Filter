@@ -8,14 +8,7 @@ using Eigen::VectorXd;
 
 class Tools {
 public:
-  /**
-  * Constructor.
-  */
   Tools();
-
-  /**
-  * Destructor.
-  */
   virtual ~Tools();
 
   /**
@@ -29,7 +22,7 @@ public:
 
   VectorXd MapRadarPolarToCartesianPosition(const VectorXd& x_radar);
 
-  VectorXd SubtractAndNormalizeAngle(VectorXd a, VectorXd b, size_t indexAngle);
+  VectorXd SubtractAndNormalize(VectorXd a, VectorXd b, size_t indexAngle);
   double NormalizeAngle(double angle);
 
 };

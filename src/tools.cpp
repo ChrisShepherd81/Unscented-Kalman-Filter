@@ -68,7 +68,7 @@ VectorXd Tools::MapRadarPolarToCartesianPosition(const VectorXd& x_radar)
   return result;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-VectorXd Tools::SubtractAndNormalizeAngle(VectorXd a, VectorXd b, size_t indexAngle)
+VectorXd Tools::SubtractAndNormalize(VectorXd a, VectorXd b, size_t indexAngle)
 {
   VectorXd result = a-b;
   result(indexAngle) = this->NormalizeAngle(result(indexAngle));
