@@ -18,7 +18,7 @@ public:
                                 const std::vector<VectorXd> &ground_truth,
                                 const size_t stateVectorLenght);
 
-  VectorXd transformEstimationVector(const Eigen::VectorXd &est);
+  VectorXd TransformEstimationVector(const Eigen::VectorXd &est);
 
   VectorXd MapRadarPolarToCartesianPosition(const VectorXd& x_radar);
 

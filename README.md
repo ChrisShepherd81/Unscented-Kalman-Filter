@@ -20,7 +20,7 @@ Self-Driving Car Engineer Nanodegree Program Project 2 - Term 2
     - eg. `./UnscentedKF ../data/sample-laser-radar-measurement-data-1.txt output.txt`
 
 ## Overview
-![class diagram](./misc/todo.png "Class diagram")
+![class diagram](./misc/overview.png "Class diagram")
 
 ## Results
 For std_a = 0.9 m/s^2 and std_yawdd = 0.6 rad/s^2

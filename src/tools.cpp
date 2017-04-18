@@ -23,7 +23,7 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   //accumulate squared residuals
   for(size_t i=0; i < estimations.size(); ++i)
   {
-    VectorXd temp = transformEstimationVector(estimations[i]) - ground_truth[i];
+    VectorXd temp = TransformEstimationVector(estimations[i]) - ground_truth[i];
     temp = temp.array()*temp.array();
     rmse += temp;
   }
@@ -38,7 +38,7 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   return rmse;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Eigen::VectorXd Tools::transformEstimationVector(const Eigen::VectorXd &est)
+Eigen::VectorXd Tools::TransformEstimationVector(const Eigen::VectorXd &est)
 {
   Eigen::VectorXd transformed = Eigen::VectorXd::Zero(4);
 

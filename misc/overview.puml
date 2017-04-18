@@ -1,0 +1,99 @@
+@startuml
+skinparam monochrome true
+' skinparam classAttributeFontName Cambria
+' skinparam classAttributeFontSize 13
+
+class Tools{
+  +CalculateRMSE()
+  +TransformEstimationVector()
+  +MapRadarPolarToCartesianPosition()
+  +SubtractAndNormalize()
+  +NormalizeAngle()
+}
+class UKF{
+  +ProcessMeasurement() : void
+  +GetX() : const VectorXd
+  +GetNIS() : const double
+  --
+  -n_x_ : const size_t
+  -n_aug_ : constexpr size_t
+  -lambda_ : constexpr double 
+  
+  -std_laspx_ : const double
+  -std_laspy_ : const double
+  -std_radr_ : const double
+  -std_radphi_ : const double
+  -std_radrd_ : const double
+  
+  -usedSensors_ : enum UseSensor
+  -weights_ : VectorXd
+  
+  -NIS_ : double
+  -Xsig_pred_ : SigmaPoints
+  
+  
+  -x_ : Eigen::VectorXd 
+  -P_ : Eigen::MatrixXd 
+  
+  -Zsig_ : Eigen::MatrixXd 
+  -z_pred_ : Eigen::VectorXd
+  -S_ Eigen::MatrixXd 
+  -I_ Eigen::MatrixXd 
+  -H_lidar_ Eigen::MatrixXd 
+  -R_lidar_ Eigen::MatrixXd 
+  -R_radar_ Eigen::MatrixXd 
+
+  -getDeltaTime() : double
+  -hFuncRadar() : VectorXd
+  -prediction() : void
+  -predictRadarMeasurement() : void
+  -predictMeanAndCovariance() : void
+  -updateLidar() : void
+  -updateRadar() : void
+  
+  -initalize() : void
+  -initalizeWeights() : void
+  -initalizeMatrices() : void
+  
+
+}
+class SigmaPoints{
+ +predictSigmaPoints(const VectorXd &x, const MatrixXd &P, double dt) : void
+ +Get() : MatrixXd&
+ --
+ -Xsig_pred_ : MatrixXd
+ -n_aug_ : size_t
+ -n_x_ : size_t
+ -std_a_ : double
+ -std_yawdd_ : double
+ -lambda_ : double
+ --
+ -generateSigmaPoints() : MatrixXd
+ -predictSigmaPointColumn() : VectorXd
+ 
+}
+
+class Data{
+ SensorType : enum
+ values : VectorXd 
+}
+
+class TestDataFileHandler{ 
+ +check_files() : bool
+ +read_file() : void
+ +write_to_file() : void
+}
+class PlotData{ 
+ +addPoint() : void
+ +getAllX() const : std::vector<double>
+ +getAllY() const : std::vector<double>
+ +getTitle() const : std::string 
+}
+SigmaPoints *-- UKF
+Tools *-- UKF
+Data <|-- MeasurementPackage
+Data <|-- GroundTruthPackage
+MeasurementPackage .. UKF
+MeasurementPackage .. TestDataFileHandler
+GroundTruthPackage .. TestDataFileHandler
+@enduml
