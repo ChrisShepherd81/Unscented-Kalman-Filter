@@ -20,6 +20,8 @@ Self-Driving Car Engineer Nanodegree Program Project 2 - Term 2
     - eg. `./UnscentedKF ../data/sample-laser-radar-measurement-data-1.txt output.txt`
 
 ## Overview
+
+Overview class diagram. For orientation only, not exhaustive.
 ![class diagram](./misc/overview.png "Class diagram")
 
 ## Results

@@ -1,7 +1,8 @@
 #include "ukf.h"
 ///////////////////////////////////////////////////////////////////////////////////////
 //size_t n_aug, size_t n_x, double std_a, double std_yawdd, double lambda
-UKF::UKF(double std_a, double std_yawdd, UseSensor sensors) : Xsig_pred_(n_aug_, n_x_, std_a, std_yawdd, lambda_)
+UKF::UKF(double std_a, double std_yawdd, UseSensor sensors) :
+  Xsig_pred_(n_aug_, n_x_, std_a, std_yawdd, lambda_)
 {
   usedSensors_ = sensors;
   NIS_ = 0;
@@ -28,7 +29,6 @@ void UKF::initalize(const MeasurementPackage &measurement)
     VectorXd x = tools_.MapRadarPolarToCartesianPosition(measurement.values);
     x_(0) = x(0);
     x_(1) = x(1);
-    //TODO: estimate yaw and velocity
   }
   else if (measurement.sensor_type == MeasurementPackage::LASER)
   {
@@ -52,24 +52,20 @@ void UKF::initalizeMatrices()
 {
   x_ = VectorXd::Zero(n_x_);
   P_ = MatrixXd::Identity(n_x_, n_x_);
+  I_ = MatrixXd::Identity(n_x_, n_x_);
 
-  //observation model mapping matrix lidar
-  H_lidar_ = MatrixXd::Zero(2, n_x_);
-  H_lidar_ << 1, 0, 0, 0, 0,
-              0, 1, 0, 0, 0;
-
-  //measurement noise matrix - lidar
-  R_lidar_ = MatrixXd::Zero(2, 2);
-  R_lidar_ << std_laspx_*std_laspx_, 0,
-              0, std_laspy_*std_laspy_;
+  //measurement noise matrix  and observation model mapping matrix - lidar
+  double std_laspx_  = 0.15; //Laser noise standard deviation position1 in m
+  double std_laspy_  = 0.15; //Laser noise standard deviation position2 in m
+  SensorConfig lidar({std_laspx_, std_laspy_}, n_x_);
+  lidar_sensor_ = lidar;
 
   //measurement noise matrix - radar
-  R_radar_ = MatrixXd(3, 3);
-  R_radar_ <<   std_radr_*std_radr_, 0, 0,
-                0, std_radphi_*std_radphi_, 0,
-                0, 0, std_radrd_*std_radrd_;
-
-  I_ = MatrixXd::Identity(n_x_, n_x_);
+  double std_radr_   = 0.3;  //Radar noise standard deviation radius in m
+  double std_radphi_ = 0.03; //Radar noise standard deviation angle in rad
+  double std_radrd_  = 0.3;  //Radar noise standard deviation radius change in m/s
+  SensorConfig radar({std_radr_, std_radphi_, std_radrd_}, n_x_);
+  radar_sensor_ = radar;
 }
 ///////////////////////////////////////////////////////////////////////////////////////
 void UKF::ProcessMeasurement(const MeasurementPackage &measurement)
@@ -127,7 +123,21 @@ void UKF::updateRadar(const VectorXd &z)
 {
   size_t n_z = z.size();
 
+  //updates Zsig_ and z_pred_
   predictRadarMeasurement(n_z);
+
+  //measurement covariance matrix S
+  MatrixXd S = MatrixXd::Zero(n_z,n_z);
+
+  //calculate measurement covariance matrix S
+  for(size_t j=0; j < Zsig_.cols(); ++j)
+  {
+    VectorXd z_diff = tools_.SubtractAndNormalize(Zsig_.col(j), z_pred_, 1);
+
+    S += weights_(j)*z_diff*z_diff.transpose();
+  }
+
+  S += radar_sensor_.GetR();
 
   //create matrix for cross correlation Tc
   MatrixXd Tc = MatrixXd::Zero(n_x_, n_z);
@@ -140,29 +150,29 @@ void UKF::updateRadar(const VectorXd &z)
   }
 
   //calculate Kalman gain K;
-  MatrixXd K = Tc*S_.inverse();
+  MatrixXd K = Tc*S.inverse();
 
   //update state mean and covariance matrix
   VectorXd z_diff = tools_.SubtractAndNormalize(z, z_pred_, 1);
   x_ = x_ + K*z_diff;
-  P_ = P_ - (K*S_*K.transpose());
+  P_ = P_ - (K*S*K.transpose());
 
   //Calculate NIS
-  this->NIS_ = z_diff.transpose()*S_.inverse()*z_diff;
+  this->NIS_ = z_diff.transpose()*S.inverse()*z_diff;
 }
 ///////////////////////////////////////////////////////////////////////////////////////
 void UKF::updateLidar(const VectorXd &z) {
 
-  VectorXd z_pred = H_lidar_ * x_;
+  VectorXd z_pred = lidar_sensor_.GetH() * x_;
   VectorXd z_diff = z - z_pred;
-  MatrixXd Ht = H_lidar_.transpose();
-  MatrixXd S = H_lidar_ * P_ * Ht + R_lidar_;
+  MatrixXd Ht = lidar_sensor_.GetH().transpose();
+  MatrixXd S = lidar_sensor_.GetH() * P_ * Ht + lidar_sensor_.GetR();
   MatrixXd PHt = P_ * Ht;
   MatrixXd K = PHt * S.inverse();
 
   //update state mean and covariance matrix
   x_ = x_ + (K * z_diff);
-  P_ = (I_ - K * H_lidar_) * P_;
+  P_ = (I_ - K * lidar_sensor_.GetH()) * P_;
 
   //Calculate NIS
   this->NIS_ = z_diff.transpose()*S.inverse()*z_diff;
@@ -196,6 +206,7 @@ double UKF::getDeltaTime(long timestamp)
 ///////////////////////////////////////////////////////////////////////////////////////
 VectorXd UKF::hFuncRadar(const VectorXd & x)
 {
+  //TODO: Better implemented in own class for radar sensors.
   VectorXd zTemp = VectorXd::Zero(3);
 
   double px = x(0);
@@ -228,9 +239,6 @@ void UKF::predictRadarMeasurement(size_t n_z)
   //mean predicted measurement
   z_pred_ = VectorXd::Zero(n_z);
 
-  //measurement covariance matrix S
-  S_ = MatrixXd::Zero(n_z,n_z);
-
   //transform sigma points into measurement space
   for(size_t i=0; i < Xsig_pred.cols(); ++i)
   {
@@ -243,19 +251,8 @@ void UKF::predictRadarMeasurement(size_t n_z)
     z_pred_.row(j) = Zsig_.row(j)*weights_;
   }
 
-  //calculate measurement covariance matrix S
-  for(size_t j=0; j < Zsig_.cols(); ++j)
-  {
-    VectorXd z_diff = tools_.SubtractAndNormalize(Zsig_.col(j), z_pred_, 1);
-
-    S_ += weights_(j)*z_diff*z_diff.transpose();
-  }
-
-  S_ += R_radar_;
-
 #if PRINT
   cout << "Zsig_ = \n" << Zsig_ << endl;
-  cout << "S_ = \n" << S_ << endl;
   cout << "z_pred_ = \n" << z_pred_ << endl;
 #endif
 }

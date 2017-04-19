@@ -10,6 +10,7 @@
 #include "data/TestDataFileHandler.hpp"
 #include "Eigen/Dense"
 #include "SigmaPoints.hpp"
+#include "SensorConfig.hpp"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -39,12 +40,8 @@ private:
   static constexpr size_t n_aug_ = 7; ///* Augmented state dimension
   static constexpr double lambda_ = 3.0 - n_aug_; ///* Sigma point spreading parameter
 
-  ///* Noise standard deviation of sensors
-  const double std_laspx_  = 0.15; //Laser noise standard deviation position1 in m
-  const double std_laspy_  = 0.15; //Laser noise standard deviation position2 in m
-  const double std_radr_   = 0.3;  //Radar noise standard deviation radius in m
-  const double std_radphi_ = 0.03; //Radar noise standard deviation angle in rad
-  const double std_radrd_  = 0.3;  //Radar noise standard deviation radius change in m/s
+  SensorConfig lidar_sensor_;
+  SensorConfig radar_sensor_;
 
   UseSensor usedSensors_;
 
@@ -64,11 +61,6 @@ private:
 
   MatrixXd Zsig_;
   VectorXd z_pred_;
-  MatrixXd S_;
-
-  MatrixXd H_lidar_;
-  MatrixXd R_lidar_;
-  MatrixXd R_radar_;
   MatrixXd I_;
 
   double getDeltaTime(long timestamp);
