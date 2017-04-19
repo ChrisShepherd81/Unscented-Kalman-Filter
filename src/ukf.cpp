@@ -133,10 +133,8 @@ void UKF::updateRadar(const VectorXd &z)
   for(size_t j=0; j < Zsig_.cols(); ++j)
   {
     VectorXd z_diff = tools_.SubtractAndNormalize(Zsig_.col(j), z_pred_, 1);
-
     S += weights_(j)*z_diff*z_diff.transpose();
   }
-
   S += radar_sensor_.GetR();
 
   //create matrix for cross correlation Tc
@@ -166,8 +164,8 @@ void UKF::updateLidar(const VectorXd &z) {
   VectorXd z_pred = lidar_sensor_.GetH() * x_;
   VectorXd z_diff = z - z_pred;
   MatrixXd Ht = lidar_sensor_.GetH().transpose();
-  MatrixXd S = lidar_sensor_.GetH() * P_ * Ht + lidar_sensor_.GetR();
   MatrixXd PHt = P_ * Ht;
+  MatrixXd S = lidar_sensor_.GetH() * PHt + lidar_sensor_.GetR();
   MatrixXd K = PHt * S.inverse();
 
   //update state mean and covariance matrix
@@ -181,9 +179,9 @@ void UKF::updateLidar(const VectorXd &z) {
 void UKF::predictMeanAndCovariance()
 {
   MatrixXd Xsig_pred = Xsig_pred_.Get();
+
   //predict state mean
-  for(size_t  i=0; i < Xsig_pred.rows(); ++i)
-    x_(i) = Xsig_pred.row(i)*weights_;
+  x_ = Xsig_pred*weights_;
 
   //predict state covariance matrix
   P_.fill(0);
@@ -236,20 +234,17 @@ void UKF::predictRadarMeasurement(size_t n_z)
   //create matrix for sigma points in measurement space
   Zsig_ = MatrixXd::Zero(n_z, 2 * n_aug_ + 1);
 
-  //mean predicted measurement
-  z_pred_ = VectorXd::Zero(n_z);
-
   //transform sigma points into measurement space
   for(size_t i=0; i < Xsig_pred.cols(); ++i)
   {
     Zsig_.col(i) = hFuncRadar(Xsig_pred.col(i));
   }
 
+  //mean predicted measurement
+  z_pred_ = VectorXd::Zero(n_z);
+
   //calculate mean predicted measurement
-  for(size_t j=0; j < Zsig_.rows(); ++j)
-  {
-    z_pred_.row(j) = Zsig_.row(j)*weights_;
-  }
+  z_pred_ = Zsig_*weights_;
 
 #if PRINT
   cout << "Zsig_ = \n" << Zsig_ << endl;
