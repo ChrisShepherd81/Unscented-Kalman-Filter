@@ -27,12 +27,12 @@ Overview class diagram. For orientation only, not exhaustive.
 ## Results
 For std_a = 0.9 m/s^2 and std_yawdd = 0.6 rad/s^2
 
-| Data 1    | Data 2   |
-|-----------|----------|
-| 0.0723371 | 0.19201  |
-| 0.0795866 | 0.189339 |
-| 0.589185  | 0.423164 |
-| 0.574702  | 0.528618 |
+| Data 1    | Data 2   | Data 3   |
+|-----------|----------|----------|
+| 0.0723371 | 0.19201  | 0.0646271|
+| 0.0795866 | 0.189339 | 0.0829711|
+| 0.589185  | 0.423164 | 0.330802 |
+| 0.574702  | 0.528618 | 0.212736 |
 
 ![parameter searching diagram](./misc/parameterSearch.png "Parameter searching diagram")
 ![result diagram pos data 1](./misc/Result_data_1_POS.png "Result postion diagram data 1")
