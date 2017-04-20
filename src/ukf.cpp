@@ -133,15 +133,8 @@ void UKF::updateRadar(const VectorXd &z)
   for(size_t j=0; j < Zsig_.cols(); ++j)
   {
     VectorXd z_diff = tools_.SubtractAndNormalize(Zsig_.col(j), z_pred_, 1);
-<<<<<<< HEAD
     S += weights_(j)*z_diff*z_diff.transpose();
   }
-=======
-
-    S += weights_(j)*z_diff*z_diff.transpose();
-  }
-
->>>>>>> branch 'master' of https://github.com/ChrisShepherd81/Unscented-Kalman-Filter.git
   S += radar_sensor_.GetR();
 
   //create matrix for cross correlation Tc
@@ -171,10 +164,6 @@ void UKF::updateLidar(const VectorXd &z) {
   VectorXd z_pred = lidar_sensor_.GetH() * x_;
   VectorXd z_diff = z - z_pred;
   MatrixXd Ht = lidar_sensor_.GetH().transpose();
-<<<<<<< HEAD
-=======
-  MatrixXd S = lidar_sensor_.GetH() * P_ * Ht + lidar_sensor_.GetR();
->>>>>>> branch 'master' of https://github.com/ChrisShepherd81/Unscented-Kalman-Filter.git
   MatrixXd PHt = P_ * Ht;
   MatrixXd S = lidar_sensor_.GetH() * PHt + lidar_sensor_.GetR();
   MatrixXd K = PHt * S.inverse();
