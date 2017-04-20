@@ -39,3 +39,5 @@ For std_a = 0.9 m/s^2 and std_yawdd = 0.6 rad/s^2
 ![result diagram NIS data 1](./misc/Result_data_1_NIS.png "Result NIS diagram data 1")
 ![result diagram pos data 2](./misc/Result_data_2_POS.png "Result postion diagram data 2")
 ![result diagram NIS data 2](./misc/Result_data_2_NIS.png "Result NIS diagram data 2")
+![result diagram pos data 3](./misc/Result_data_3_POS.png "Result postion diagram data 3")
+![result diagram NIS data 3](./misc/Result_data_3_NIS.png "Result NIS diagram data 3")
